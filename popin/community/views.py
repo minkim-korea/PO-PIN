@@ -64,10 +64,31 @@ def chgReviewview(request, post_id):
    
 ################################################################################
 ## 최근게시글
-def recent(request):
-    
-    return render(request, 'community/community_recent.html')
+from itertools import chain
+from operator import attrgetter
+from community.models import (
+    ExchangeReview, SharingPost, ProxyPost, CompanionPost, StatusPost
+)
 
+def recent(request):
+    def annotate_type(qs, type_name):
+        for post in qs:
+            post.post_type = type_name
+        return qs
+
+    posts = sorted(
+        chain(
+            annotate_type(ExchangeReview.objects.all(), 'review'),
+            annotate_type(SharingPost.objects.all(), 'sharing'),
+            annotate_type(ProxyPost.objects.all(), 'proxy'),
+            annotate_type(CompanionPost.objects.all(), 'companion'),
+            annotate_type(StatusPost.objects.all(), 'status'),
+        ),
+        key=attrgetter('created_at'),
+        reverse=True
+    )
+
+    return render(request, 'community/community_recent.html', {'posts': posts})
 #############################################################################
 # 동행모집글 작성
 from django.shortcuts import render, redirect
