@@ -16,4 +16,9 @@ urlpatterns = [
     
     path('location/', views.location, name='location'),
     path('location2/', views.location2, name='location2'),
+    path('location2/geocode/', views.location2_geocode_api, name='location2_geocode'),
+    path('location2_api/', views.location2_api, name='location2_api'),
+    
+   
 ]
+

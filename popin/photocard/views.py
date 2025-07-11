@@ -409,5 +409,92 @@ def wish(request, pno):
 def location(request):
     return render(request, 'location.html')
 
+
+
+
+###################################
+# photocard/views.py
+from django.http import JsonResponse
+from math import radians, cos, sin, asin, sqrt
+from .models import Photocard  # <- 실제 모델명으로 바꿔주세요
+import requests
+from django.conf import settings
+
+def location2_geocode_api(request):
+    query = request.GET.get('query')
+    if not query:
+        return JsonResponse({'status': 'error', 'message': 'No query provided'})
+
+    # ✅ .env 또는 settings.py에 저장된 KAKAO_REST_API_KEY 사용
+    KAKAO_API_KEY = getattr(settings, 'KAKAO_REST_API_KEY', None)
+    if not KAKAO_API_KEY:
+        return JsonResponse({'status': 'error', 'message': 'No Kakao API Key'})
+
+    url = "https://dapi.kakao.com/v2/local/search/address.json"
+    headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
+    params = {"query": query}
+
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        result = response.json()
+        if result['documents']:
+            location = result['documents'][0]['address']
+            return JsonResponse({
+                'status': 'ok',
+                'lat': location['y'],
+                'lng': location['x']
+            })
+        else:
+            return JsonResponse({'status': 'error', 'message': 'No result found'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'API request failed'})
+
+# 거리 계산 함수 (하버사인 공식)
+def haversine(lon1, lat1, lon2, lat2):
+    # 위도, 경도 → 라디안
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # 거리 계산
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # 지구 반지름 (km)
+    return c * r
+def location2_api(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius = float(request.GET.get('radius'))
+        query = request.GET.get('query', '').strip().lower()
+
+        results = []
+        photocard_list = Photocard.objects.filter(latitude__isnull=False, longitude__isnull=False)
+
+        for card in photocard_list:
+            dist = haversine(lng, lat, card.longitude, card.latitude)
+
+            if dist <= radius:
+                member_name = card.member.name.lower() if card.member else ''
+                group_name = card.member.group.name.lower() if card.member and card.member.group else ''
+
+                if query == '' or query in member_name or query in group_name:
+                    results.append({
+                        "title": f"{group_name} {member_name} ({card.trade_type})",
+                        "lat": card.latitude,
+                        "lng": card.longitude,
+                        "group": group_name,
+                        "member": member_name,
+                        "type": card.trade_type,
+                        "description": card.description,
+                        "distance": f"{dist:.1f}km",
+                        "image": card.image.url if card.image else '',
+                    })
+
+        return JsonResponse({"status": "ok", "results": results})
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
+    
 def location2(request):
-    return render(request, 'location2.html')
+    return render(request, 'photocard/location2 copy.html')  # 파일명은 너가 쓰는 대로

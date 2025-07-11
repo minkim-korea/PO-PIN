@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>포토카드 위치 검색 테스트</title>
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=41c5853a293964d2b95f046fc965b00b&libraries=services"></script>
+  <style>
+    #map { width: 100%; height: 400px; margin-top: 10px; }
+    input, select, button { margin: 5px; padding: 6px; }
+  </style>
+</head>
+<body>
+  <h2>📍 포토카드 위치 기반 검색 테스트</h2>
+  
+  <input type="text" id="address" placeholder="예: 서울시 강남구">
+  <select id="radius">
+    <option value="1">1km</option>
+    <option value="3" selected>3km</option>
+    <option value="5">5km</option>
+  </select>
+  <input type="text" id="query" placeholder="그룹/멤버명">
+  <button onclick="searchNearby()">검색</button>
+
+  <div id="map"></div>
+<!-- 지도 아래에 추가 -->
+<div id="infoModal" style="display:none; position:fixed; bottom:0; left:0; right:0; background:white; padding:20px; border-top:2px solid #ccc; z-index:1000;">
+  <button onclick="closeModal()">닫기</button>
+  <h3 id="modalTitle"></h3>
+  <img id="modalImage" src="" alt="포카" style="width:100px; height:auto; margin-top:10px;">
+  <p><strong>그룹:</strong> <span id="modalGroup"></span></p>
+  <p><strong>멤버:</strong> <span id="modalMember"></span></p>
+  <p><strong>유형:</strong> <span id="modalType"></span></p>
+  <p><strong>설명:</strong> <span id="modalDesc"></span></p>
+  <p><strong>거리:</strong> <span id="modalDistance"></span></p>
+</div>
+  <script>
+    let map;
+    let markers = [];
+
+    function initMap() {
+      const container = document.getElementById('map');
+      const options = {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 5
+      };
+      map = new kakao.maps.Map(container, options);
+    }
+
+    async function searchNearby() {
+      const address = document.getElementById('address').value;
+      const radius = document.getElementById('radius').value;
+      const query = document.getElementById('query').value;
+
+      const geocoder = new kakao.maps.services.Geocoder();
+
+      geocoder.addressSearch(address, async function(result, status) {
+        if (status === kakao.maps.services.Status.OK) {
+          const lat = result[0].y;
+          const lng = result[0].x;
+          const coords = new kakao.maps.LatLng(lat, lng);
+
+          map.setCenter(coords);
+          map.setLevel(3);
+
+          // 기존 마커 제거
+          markers.forEach(m => m.setMap(null));
+          markers = [];
+
+          // 백엔드 API 요청
+          const res = await fetch(`/photocard/location2_api/?lat=${lat}&lng=${lng}&radius=${radius}&query=${encodeURIComponent(query)}`);
+          const data = await res.json();
+
+          if (data.status === 'ok') {
+            data.results.forEach(item => {
+              const pos = new kakao.maps.LatLng(item.lat, item.lng);
+              const marker = new kakao.maps.Marker({
+                map: map,
+                position: pos,
+                title: item.title
+              });
+
+              const iwContent = `<div style="padding:5px;">${item.title}<br>거리: ${item.distance}</div>`;
+              const infowindow = new kakao.maps.InfoWindow({
+                content: iwContent
+              });
+
+            kakao.maps.event.addListener(marker, 'click', function() {
+  // infowindow.open(map, marker); ← 기존은 닫아도 되고
+
+  // 바텀시트에 정보 채우기
+  document.getElementById('modalTitle').innerText = item.title;
+  document.getElementById('modalGroup').innerText = item.group;
+  document.getElementById('modalMember').innerText = item.member;
+  document.getElementById('modalType').innerText = item.type;
+  document.getElementById('modalDesc').innerText = item.description || '설명 없음';
+  document.getElementById('modalDistance').innerText = item.distance;
+  document.getElementById('modalImage').src = item.image || '';
+
+  // 모달 표시
+  document.getElementById('infoModal').style.display = 'block';
+});
+
+
+
+              markers.push(marker);
+            });
+          } else {
+            alert('포토카드 검색 실패');
+          }
+        } else {
+          alert('주소를 찾을 수 없습니다.');
+        }
+      });
+    }
+function closeModal() {
+  document.getElementById('infoModal').style.display = 'none';
+}
+
+    window.onload = initMap;
+  </script>
+</body>
+</html>

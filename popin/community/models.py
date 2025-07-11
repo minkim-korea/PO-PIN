@@ -220,7 +220,7 @@ class ProxyPost(models.Model):
     max_people = models.PositiveIntegerField("최대 모집 인원" ,default=1)
     participants = models.ManyToManyField(User, blank=True, related_name="joined_proxies", verbose_name="참여자 목록")
     reward = models.CharField("수고비", max_length=100)  # 예: '개당 수고비 0.1'
-    description = models.TextField("본문")
+    description = models.TextField("본문") 
     tags = models.ManyToManyField(ProxyTag, blank=True, related_name="proxy_posts", verbose_name="태그")
     author = models.ForeignKey(User, on_delete=models.CASCADE,related_name="proxy_posts", verbose_name="작성자")
     views = models.PositiveIntegerField("조회수", default=0)
