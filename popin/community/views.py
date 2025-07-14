@@ -26,6 +26,7 @@ from community.models import SharingStatus
 from community.models import CompanionPost, CompanionComment
 from django.utils import timezone
 from community.models import  StatusStatus 
+from django.utils.timezone import now
 
 
 User = get_user_model()
@@ -99,12 +100,12 @@ def chgReview_update(request, pk):
 ################################################################################
 ## 최근게시글
 def recent(request):
-      def annotate_type(qs, type_name):
+    def annotate_type(qs, type_name):
         for post in qs:
             post.post_type = type_name
         return qs
 
-      posts = sorted(
+    posts = sorted(
         chain(
             annotate_type(ExchangeReview.objects.all(), 'review'),
             annotate_type(SharingPost.objects.all(), 'sharing'),
@@ -116,264 +117,154 @@ def recent(request):
         reverse=True
     )
 
-      return render(request, 'community/community_recent.html', {'posts': posts})
+    paginator = Paginator(posts, 10)  # 한 페이지당 10개씩
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'community/community_recent.html', {
+        'page_obj': page_obj,
+    })
 
 #############################################################################
 # 동행모집글 작성
-
+@csrf_exempt
 def write_companion(request):
-    if request.method == "POST":
-
+    if request.method == 'POST':
         try:
-            # 1. 사용자
-            user_id = request.session.get('user_id')
-            user = User.objects.get(user_id=user_id)
+            user = User.objects.get(user_id=request.session.get('user_id'))
+            date = request.POST.get('eventDate')
+            time = request.POST.get('eventTime')
+            datetime_obj = timezone.make_aware(datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M"))
 
-            # 2. 기본 정보
-            title = request.POST.get('title')
-            artist = request.POST.get('artist')
-            category = request.POST.get('category')
-            location = request.POST.get('location')
-            content = request.POST.get('content')
-            max_people = request.POST.get('max_people')  
-            tags = request.POST.get('tags', '')
-
-            # 3. 날짜 + 시간 → datetime 필드
-            date_str = request.POST.get('eventDate')
-            time_str = request.POST.get('eventTime')
-            event_datetime = timezone.make_aware(datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M"))
-
-            # 4. 게시글 저장
             post = CompanionPost.objects.create(
-                title=title,
-                artist=artist,
-                category=category,
-                location=location,
-                content=content,
-                max_people=max_people,
-                event_date=event_datetime,
                 author=user,
+                title=request.POST.get('title'),
+                artist=request.POST.get('artist'),
+                category=request.POST.get('category'),
+                location=request.POST.get('location'),
+                content=request.POST.get('content'),
+                max_people=request.POST.get('max_people'),
+                event_date=datetime_obj,
             )
 
+            for tag in request.POST.get('tags', '').split(','):
+                if tag.strip():
+                    tag_obj, _ = CompanionTag.objects.get_or_create(name=tag.strip().lstrip('#'))
+                    post.tags.add(tag_obj)
 
-            # 5. 태그 처리
-            tag_list = [tag.strip().lstrip('#') for tag in tags.split(',') if tag.strip()]
-            for tag_name in tag_list:
-                tag_obj, _ = CompanionTag.objects.get_or_create(name=tag_name)
-                post.tags.add(tag_obj)
-
-
-            # 6. 이미지 저장
             for file in request.FILES.getlist('images'):
                 CompanionImage.objects.create(post=post, image=file)
 
-
-            return redirect('community:companion')
+            return JsonResponse({'success': True})
         except Exception as e:
-            import traceback
-            print(traceback.format_exc())  # 콘솔 확인용
-            return render(request, 'community/community_write_companion.html', {'error': str(e)})
-    
+            return JsonResponse({'error': str(e)}, status=400)
+
     return render(request, 'community/community_write_companion.html')
   ########################################################################################## 
     
 ## 대리구매글 작성
-
+@csrf_exempt
 def write_proxy(request):
-
-    if request.method == "POST":
-        title = request.POST.get("title")
-        artist = request.POST.get("artist")
-        category = request.POST.get("category", "기타")
-        status = request.POST.get("status", "모집중")
-
-
-        # 날짜와 시간 조합 → DateTimeField에 맞게
-        event_date = request.POST.get("eventDate")
-        event_time = request.POST.get("eventTime")
-        event_datetime = timezone.make_aware(datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M"))
-
-
-        location = request.POST.get("location")
-        max_people = request.POST.get('max_people')
-        reward = request.POST.get("fee")
-        description = request.POST.get("content")
-        tag_string = request.POST.get("tags", "")
-
-        # 세션에서 사용자 가져오기
-        user_id = request.session.get("user_id")
-        if not user_id:
-            return redirect("login")  # 로그인 안 되어 있으면 로그인 페이지로
-
-
+    if request.method == 'POST':
         try:
-            user = User.objects.get(user_id=user_id)
-        except User.DoesNotExist:
-            return render(request, "community/write_proxy.html", {"error": "사용자를 찾을 수 없습니다."})
+            user = User.objects.get(user_id=request.session.get('user_id'))
+            datetime_obj = timezone.make_aware(datetime.strptime(
+                f"{request.POST.get('eventDate')} {request.POST.get('eventTime')}", "%Y-%m-%d %H:%M"))
 
-        # 저장
-        proxy_post = ProxyPost.objects.create(
-            title=title,
-            artist=artist,
-            category=category,
-            status=status,
-            event_date=event_datetime,
-            location=location,
-            max_people=max_people,
-            reward=reward,
-            description=description,
-            author=user
-        )
+            post = ProxyPost.objects.create(
+                author=user,
+                title=request.POST.get('title'),
+                artist=request.POST.get('artist'),
+                category=request.POST.get('category', '기타'),
+                status=request.POST.get('status', '모집중'),
+                event_date=datetime_obj,
+                location=request.POST.get('location'),
+                max_people=request.POST.get('max_people'),
+                reward=request.POST.get('fee'),
+                description=request.POST.get('content')
+            )
 
-        # 태그 처리
-        tags = [t.strip().replace("#", "") for t in tag_string.split() if t.strip()]
-        for tag_name in tags:
-            tag_obj, _ = ProxyTag.objects.get_or_create(name=tag_name)
-            proxy_post.tags.add(tag_obj)
+            for tag in request.POST.get('tags', '').split():
+                tag_obj, _ = ProxyTag.objects.get_or_create(name=tag.lstrip('#'))
+                post.tags.add(tag_obj)
 
-        # 이미지 업로드
-        images = request.FILES.getlist("images")
-        for img in images:
-            ProxyImage.objects.create(post=proxy_post, image=img)
+            for img in request.FILES.getlist('images'):
+                ProxyImage.objects.create(post=post, image=img)
 
-        return redirect("community:main")  # 작성 완료 후 메인으로 이동
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
-    
     return render(request, 'community/community_write_proxy.html')
 
 #############################################
 ## 교환후기 글작성 
+@csrf_exempt
 def write_review(request):
     if request.method == 'POST':
         try:
-            # 세션에서 user_id 가져오기
             user_id = request.session.get('user_id')
-            if not user_id:
-                messages.error(request, "[오류] 로그인 정보가 없습니다.")
-                return redirect('community:write_review')
-
-            try:
-                writer = User.objects.get(user_id=user_id)
-            except User.DoesNotExist:
-                messages.error(request, "[오류] 유저 정보를 찾을 수 없습니다.")
-                return redirect('community:write_review')
-
-            title = request.POST.get('title')
-            content = request.POST.get('content')
-            artist = request.POST.get('artist', '기타')
-            method = request.POST.get('method')
-            transaction_type = request.POST.get('transaction_type', '교환')
-            score = int(request.POST.get('overall_score', 3))
-            tag_str = request.POST.get('tags', '')
+            writer = User.objects.get(user_id=user_id)
             partner_id = request.POST.get('partner')
+            partner = User.objects.get(user_id=partner_id)
 
-            try:
-                partner = User.objects.get(user_id=partner_id)
-            except User.DoesNotExist:
-                partner = writer  # fallback
+            review = ExchangeReview.objects.create(
+                writer=writer,
+                partner=partner,
+                title=request.POST.get('title'),
+                content=request.POST.get('content'),
+                artist=request.POST.get('artist', '기타'),
+                method=request.POST.get('method'),
+                transaction_type=request.POST.get('transaction_type', '교환'),
+                overall_score=int(request.POST.get('overall_score', 3))
+            )
 
-            with transaction.atomic():
-                review = ExchangeReview.objects.create(
-                    writer=writer,
-                    partner=partner,
-                    title=title,
-                    content=content,
-                    artist=artist,
-                    method=method,
-                    transaction_type=transaction_type,
-                    overall_score=score
-                )
+            tag_str = request.POST.get('tags', '')
+            for tag in tag_str.strip().split():
+                tag_obj, _ = ReviewTag.objects.get_or_create(name=tag.lstrip('#'))
+                review.tags.add(tag_obj)
 
-                if tag_str:
-                    tag_list = [tag.lstrip('#') for tag in tag_str.strip().split()]
-                    for tag in tag_list:
-                        tag_obj, _ = ReviewTag.objects.get_or_create(name=tag)
-                        review.tags.add(tag_obj)
+            for img in request.FILES.getlist('images'):
+                ReviewImage.objects.create(review=review, image=img)
 
-                for img in request.FILES.getlist('images'):
-                    ReviewImage.objects.create(review=review, image=img)
-
-            messages.success(request, "리뷰가 저장되었습니다.")
-            return redirect('community:main')
+            return JsonResponse({'success': True})
 
         except Exception as e:
-            print("[리뷰 저장 실패]", e)
-            messages.error(request, f"[오류] {str(e)}")
-            return redirect('community:write_review')
+            return JsonResponse({'error': str(e)}, status=400)
 
     return render(request, 'community/community_write_review.html')
 #########################################
 
 #나눔 
-
 def write_sharing(request):
     if request.method == 'POST':
         try:
-            user_id = request.session.get('user_id')
-            if not user_id:
-                messages.error(request, "[오류] 로그인 정보가 없습니다.")
-                return redirect('community:write_sharing')
+            author = User.objects.get(pk=request.session.get('user_id'))
 
-            try:
-                author = User.objects.get(pk=user_id)
-            except User.DoesNotExist:
-                messages.error(request, "[오류] 작성자 정보를 찾을 수 없습니다.")
-                return redirect('community:write_sharing')
+            post = SharingPost.objects.create(
+                author=author,
+                title=request.POST.get('title'),
+                content=request.POST.get('content'),
+                artist=request.POST.get('artist', '기타'),
+                category=request.POST.get('category'),
+                type=request.POST.get('type', '오프라인'),
+                location=request.POST.get('location'),
+                requirement=request.POST.get('requirement'),
+                share_date=make_aware(datetime.strptime(request.POST.get('share_date'), "%Y-%m-%dT%H:%M"))
+            )
 
-            # POST 데이터 받기
-            title = request.POST.get('title')
-            content = request.POST.get('content')
-            artist = request.POST.get('artist', '기타')
-            category = request.POST.get('category')
-            sharing_type = request.POST.get('type')
-            if not sharing_type: sharing_type = '오프라인'
-            location = request.POST.get('location')
-            requirement = request.POST.get('requirement')
             tag_str = request.POST.get('tags', '')
-            share_date_str = request.POST.get('share_date')
+            for tag in tag_str.split(','):
+                if tag.strip():
+                    tag_obj, _ = SharingTag.objects.get_or_create(name=tag.strip().lstrip('#'))
+                    post.tags.add(tag_obj)
 
-            # 타입 누락 시 오류 처리
-            if not sharing_type:
-                messages.error(request, "[오류] 나눔 형태(type)는 필수 선택 항목입니다.")
-                return redirect('community:write_sharing')
+            for img in request.FILES.getlist('images'):
+                SharingImage.objects.create(post=post, image=img)
 
-            # 날짜 변환
-            share_date = None
-            if share_date_str:
-                naive_datetime = datetime.strptime(share_date_str, "%Y-%m-%dT%H:%M")
-                share_date = make_aware(naive_datetime)
-
-            with transaction.atomic():
-                post = SharingPost.objects.create(
-                    author=author,
-                    title=title,
-                    content=content,
-                    artist=artist,
-                    category=category,
-                    type=sharing_type,  #  정확히 전달
-                    share_date=share_date,
-                    location=location,
-                    requirement=requirement
-                )
-
-                # 태그 저장
-                if tag_str:
-                    tag_list = [tag.strip().lstrip('#') for tag in tag_str.split(',')]
-                    for tag in tag_list:
-                        tag_obj, _ = SharingTag.objects.get_or_create(name=tag)
-                        post.tags.add(tag_obj)
-
-                # 이미지 저장
-                for img in request.FILES.getlist('images'):
-                    SharingImage.objects.create(post=post, image=img)
-
-            messages.success(request, "나눔 글이 저장되었습니다.")
-            return redirect('community:main')
-
+            return JsonResponse({'success': True})
         except Exception as e:
-            print("[나눔 저장 실패]", e)
-            messages.error(request, f"[오류] {str(e)}")
-            return redirect('community:write_sharing')
+            return JsonResponse({'error': str(e)}, status=400)
 
     return render(request, 'community/community_write_sharing.html')
 #################################################################

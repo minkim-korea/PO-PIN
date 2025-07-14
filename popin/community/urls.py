@@ -5,7 +5,7 @@ app_name = 'community'
 
 urlpatterns = [
     path('chgReview/main/', views.chgReviewmain, name='chgReviewmain'),
-    path('chgReview/view/<int:pk>/', views.chgReviewview, name='chgReviewview'),
+    path('chgReview/view/<int:pk>/', views.chgReviewview, name='chgReviewview'),#마이페이지에서볼때
     path('chgReview/update/<int:pk>/', views.chgReview_update, name='chgReview_update'),#수정
     path('recent/', views.recent, name='recent'),
     path('write/companion/', views.write_companion, name='write_companion'),
@@ -24,8 +24,8 @@ urlpatterns = [
     path('sharing/', views.sharing, name='sharing'),
     path('status/', views.status, name='status'),
 
-    path('companion/<int:pk>/', views.companion_detail, name='companion_detail'),
-    path('sharing/<int:pk>/', views.sharing_detail, name='sharing_detail'),
-    path('proxy/<int:pk>/', views.proxy_detail, name='proxy_detail'),
+    path('companion/<int:pk>/', views.companion_detail, name='companion_detail'),#마이페이지에서볼때
+    path('sharing/<int:pk>/', views.sharing_detail, name='sharing_detail'),#마이페이지에서볼때
+    path('proxy/<int:pk>/', views.proxy_detail, name='proxy_detail'),#마이페이지에서볼때
   
 ]
