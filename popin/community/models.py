@@ -117,6 +117,26 @@ class CompanionTag(models.Model):
 # 동행 모집 게시글
 
 class CompanionPost(models.Model):
+    
+    REGION_CHOICES = [
+        ("서울", "서울"),
+        ("경기", "경기"),
+        ("부산", "부산"),
+        ("대구", "대구"),
+        ("인천", "인천"),
+        ("광주", "광주"),
+        ("대전", "대전"),
+        ("울산", "울산"),
+        ("강원", "강원"),
+        ("충북", "충북"),
+        ("충남", "충남"),
+        ("전북", "전북"),
+        ("전남", "전남"),
+        ("경북", "경북"),
+        ("경남", "경남"),
+        ("제주", "제주"),
+        ("기타", "기타"),
+    ]
     title = models.CharField("제목", max_length=100)
     artist = models.CharField("아티스트", max_length=50)
     category = models.CharField("카테고리", max_length=20, choices=CompanionCategory.choices)
@@ -152,6 +172,7 @@ class CompanionPost(models.Model):
     report_level = models.CharField("신고 상태",max_length=10,choices=ReportLevel.choices,default=ReportLevel.NORMAL )
     comments_count = models.PositiveIntegerField("댓글 수", default=0)
     report_count = models.PositiveIntegerField("신고 수", null=True, blank=True, default=0)
+    region = models.CharField("지역", max_length=20, choices=REGION_CHOICES)
     def __str__(self):
         return f"[{self.artist}] {self.title}"
 
