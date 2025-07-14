@@ -5,8 +5,8 @@ app_name = 'community'
 
 urlpatterns = [
     path('chgReview/main/', views.chgReviewmain, name='chgReviewmain'),
-    path('chgReview/view/<int:post_id>', views.chgReviewview, name='chgReviewview'),
-    
+    path('chgReview/view/<int:pk>/', views.chgReviewview, name='chgReviewview'),
+    path('chgReview/update/<int:pk>/', views.chgReview_update, name='chgReview_update'),#수정
     path('recent/', views.recent, name='recent'),
     path('write/companion/', views.write_companion, name='write_companion'),
     path('write/proxy/', views.write_proxy, name='write_proxy'),
@@ -14,25 +14,16 @@ urlpatterns = [
     path('write/sharing/', views.write_sharing, name='write_sharing'),
     path('write/status/', views.write_status, name='write_status'),
 
-
     path('', views.main, name='main'),
    
 
-
-    
     path('companion/', views.companion, name='companion'),
     path('proxy/', views.proxy, name='proxy'),
     path('sharing/', views.sharing, name='sharing'),
     path('status/', views.status, name='status'),
 
-    path("updateC/<int:pk>/", views.updateC, name="updateC"),
-    path('updateCo/', views.updateCo, name='updateCo'),
-    path('updateP/', views.updateP, name='updateP'),
-    path('updateSh/', views.updateSh, name='updateSh'),
-    path('updateS/', views.updateS, name='updateS'),
-
-    path('companion/view/', views.companionview, name='companionview'),
-    path('proxy/view/', views.proxyview, name='proxyview'),
-    path('sharing/view/', views.sharingview, name='sharingview'),
-    path('status/view/', views.statusview, name='statusview'),
+    path('companion/<int:pk>/', views.companion_detail, name='companion_detail'),
+    path('sharing/<int:pk>/', views.sharing_detail, name='sharing_detail'),
+    path('proxy/<int:pk>/', views.proxy_detail, name='proxy_detail'),
+   
 ]

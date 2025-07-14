@@ -75,7 +75,9 @@
 
       <div class="action-buttons">
         <a href="#" class="btn back" onclick="history.back()">이전으로</a>
-        <a href="{% url 'community:updateC' %}" class="btn update">수정하기</a>
+        {% if request.session.user_id == post.writer.user_id %} 
+        <a href="{% url 'community:chgReview_update' post.id %}" class="btn update">수정하기</a>
+        {% endif %}
         <a href="#" class="btn delete">삭제하기</a>
       </div>
     </div>

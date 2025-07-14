@@ -1,0 +1,496 @@
+{% extends 'header_login.html'%}
+{% load static %}
+<!--상단 헤더-->
+{%block content%}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+  <title>교환후기 수정</title>
+  <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-menu a:hover {
+      color: #667eea;
+      transform: translateY(-2px);
+    }
+
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -5px;
+      left: 50%;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+
+    .nav-menu a:hover::after {
+      width: 100%;
+    }
+
+    .home {
+      all: unset;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      color: #7E6EB0;
+      padding: 10px 15px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .home:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .home i {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+    }
+
+    .Bboard {
+      width: 900px;
+      min-height: 700px;
+      border-radius: 25px;
+      margin: 100px auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dash-top {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .dash-top h2 {
+      font-size: 24px;
+    }
+
+    .line {
+      border-bottom: 1px solid rgba(185, 180, 190, 0.96);
+      margin: 20px auto 0 auto;
+    }
+
+    table.writebox {
+      width: 880px;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+      margin: 0 auto;
+    }
+
+    table.writebox th {
+      width: 130px;
+      text-align: center;
+      vertical-align: middle;
+      padding: 10px;
+      font-size: 16px;
+      color: #555;
+    }
+
+    table.writebox td {
+      padding-top: 5px;
+    }
+
+    input.wlong, textarea.tta, input.fileType {
+      width: calc(80% - 10px);
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    input.wlong:focus, textarea.tta:focus, input.fileType:focus {
+      border: 2px solid #7E6EB0;
+    }
+
+    textarea.tta {
+      height: 200px;
+      resize: vertical;
+    }
+
+    /* 토글 스위치 스타일 */
+    .toggle-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .toggle-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: #ddd;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .toggle-switch.active {
+      background: #7E6EB0;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(26px);
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .toggle-switch.active + .toggle-label {
+      color: #7E6EB0;
+    }
+
+    /* 별점 스타일 */
+    .rating {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .star {
+      font-size: 24px;
+      color: #ddd;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .star:hover,
+    .star.active {
+      color: #FFD700;
+    }
+
+    .rating-text {
+      margin-left: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .file-upload-area {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: calc(80% - 10px);
+      background: #FAFAFA;
+    }
+
+    .file-upload-area:hover {
+      border-color: #7E6EB0;
+      background: rgba(126, 110, 176, 0.05);
+    }
+
+    .file-upload-area.dragover {
+      border-color: #7E6EB0;
+      background: rgba(126, 110, 176, 0.1);
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: #7E6EB0;
+      margin-bottom: 10px;
+    }
+
+    .file-list {
+      margin-top: 15px;
+      width: calc(80% - 10px);
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: linear-gradient(135deg, #F8F9FF 0%, #F0F2FF 100%);
+      border: 1px solid #E0E5FF;
+      border-radius: 8px;
+      margin: 8px 0;
+      transition: all 0.3s ease;
+    }
+
+    .file-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(126, 110, 176, 0.15);
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .file-icon {
+      width: 32px;
+      height: 32px;
+      background: #7E6EB0;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .file-size {
+      font-size: 12px;
+      color: #666;
+      margin-left: 5px;
+    }
+
+    .file-remove {
+      color: #FF4444;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .file-remove:hover {
+      background: #FF4444;
+      color: white;
+    }
+
+    .file-count {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #7E6EB0;
+      font-weight: 500;
+    }
+
+    .btn {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 25px;
+      font-size: 16px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #7E6EB0;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn button:hover {
+      background-color: #6b5a96;
+    }
+        .required {
+      color: #ff4444;
+    }
+  </style>
+</head>
+<body>
+  <form method="POST"  action="{% url 'community:write_review' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+  <div class="Bboard">
+    <div class="notice">
+      <div class="dash-top">
+        <h2>교환후기 글 수정</h2>
+        <div class="line"></div>
+      </div>
+    </div>
+    <table class="writebox">
+      <tbody>
+        <tr>
+          <th scope="row"><label for="title">제목 <span class="required">*</span></label></th>
+          <td><input type="text" class="wlong" name="title" id="title" value = "교환후기 제목"/></td>
+        </tr>
+        <tr>
+
+        <th scope="row"><label for="artist">아티스트 <span class="required">*</span></label></th>
+        <td><input type="text" class="wlong" name="artist" id="artist" placeholder="예: nct wish" value = "엔시티 위시" /></td>
+      </tr>
+
+
+        <tr>
+          <th scope="row"><label for="content">후기내용 <span class="required">*</span></label></th>
+          <td><textarea class="tta" name="content" id="content" placeholder="교환 경험에 대한 상세한 후기를 작성해주세요." >
+            ㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇ
+          </textarea></td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="partner">상대방 아이디 <span class="required">*</span></label></th>
+          <td><input type="text" class="wlong" name="partner" id="partner" placeholder="교환하신 상대방의 아이디를 입력해주세요" value = "bttfbttf"/></td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="tags">태그</label></th>
+          <td><input type="text" class="wlong" name="tags" id="tags" placeholder="#친절 #재거래희망 #빠른배송 등" value = "#ddd #sas #aaa"/></td>
+        </tr>
+        <tr>
+          <th scope="row">온/오프 <span class="required">*</span></th>
+          <td>
+            <div class="toggle-group">
+            <input type="hidden" name="method" id="methodInput" value="">
+              <div class="toggle-option">
+                <div class="toggle-switch" id="onlineToggle"></div>
+                <span class="toggle-label">온라인</span>
+              </div>
+              <div class="toggle-option">
+                <div class="toggle-switch" id="offlineToggle"></div>
+                <span class="toggle-label">오프라인</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">거래 방식 <span class="required">*</span></th>
+          <input type="hidden" name="transaction_type" id="transactionTypeInput" value="">
+          <td>
+            <div class="toggle-group">
+              <div class="toggle-option">
+                <div class="toggle-switch" id="saleToggle"></div>
+                <span class="toggle-label">판매</span>
+              </div>
+              <div class="toggle-option">
+                <div class="toggle-switch" id="exchangeToggle"></div>
+                <span class="toggle-label">교환</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">총평점 <span class="required">*</span></th>
+          <input type="hidden" name="overall_score" id="scoreInput" value="">
+          <td>
+            <div class="rating">
+              <span class="star" data-rating="1">★</span>
+              <span class="star" data-rating="2">★</span>
+              <span class="star" data-rating="3">★</span>
+              <span class="star" data-rating="4">★</span>
+              <span class="star" data-rating="5">★</span>
+              <span class="rating-text">별점을 선택해주세요</span>
+            </div>
+          </td>
+
+          </tr>
+            <tr>
+            <th scope="row">사진 첨부</th>
+            <td>
+              <div class="file-upload-area" id="fileUploadArea">
+                <input type="file" name="images" id="fileInput" multiple accept="image/*" style="display: none;">
+                <div class="upload-icon">📷</div>
+                <p><strong>클릭하거나 파일을 드래그하여 업로드</strong></p>
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">JPG, PNG, GIF 파일만 업로드 가능 (최대 10MB)</p>
+              </div>
+              <div class="file-list" id="fileList"></div>
+              <div class="file-count" id="fileCount" style="display: none;"></div>
+            </td>
+          </tr>
+
+      </tbody>
+    </table>
+
+    <div class="btn">
+      <button type="submit" value="write">확인</button>
+      <button type="button" value="cancel" onclick="location.href='{% url 'community:chgReviewview' post.id %}'">취소</button>
+    </div>
+  </div>
+
+</form>
+</body>
+{% endblock content %}
+</html>
